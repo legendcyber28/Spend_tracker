@@ -1,0 +1,7 @@
+{
+  "name": "Expense Tracker",
+  "description": "Production-ready Android mobile expense tracker with offline persistence, budgeting, analytics, recurring transactions, and PIN security.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
