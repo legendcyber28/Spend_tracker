@@ -77,6 +77,21 @@ export function exportTransactionsToCSV(transactions: Transaction[], settings: A
 }
 
 export function downloadFile(content: string, filename: string, type = 'text/csv'): void {
+  const cap = (window as any).Capacitor;
+  if (cap?.isNativePlatform?.()) {
+    // Native app: blob downloads do nothing in the WebView, so write a file and open the share sheet (save to Drive / WhatsApp / Files).
+    (async () => {
+      try {
+        const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
+        const { Share } = await import('@capacitor/share');
+        const res = await Filesystem.writeFile({ path: filename, data: content, directory: Directory.Cache, encoding: Encoding.UTF8 });
+        await Share.share({ title: filename, files: [res.uri], dialogTitle: 'Save or share ' + filename });
+      } catch (e) {
+        console.error('share failed', e);
+      }
+    })();
+    return;
+  }
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

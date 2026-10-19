@@ -1,6 +1,6 @@
 {
-  "appId": "com.expensetracker.app",
-  "appName": "Expense Tracker",
+  "appId": "com.expensetracker.app2",
+  "appName": "Expense Tracker v2",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {

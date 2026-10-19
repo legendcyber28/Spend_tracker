@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { TransactionType, RecurrenceFrequency } from '../types';
-import { CategoryIcon } from './CategoryIcon';
+import { CategoryIcon, getSubcategoryIconName, setCustomSubcategoryIcon, AVAILABLE_ICONS } from './CategoryIcon';
 import { getTodayDateString, getCurrentTimeString } from '../utils/formatters';
 
 export const AddTransactionModal: React.FC = () => {
@@ -28,6 +28,7 @@ export const AddTransactionModal: React.FC = () => {
     addTransaction,
     updateTransaction,
     addRecurring,
+    updateCategory,
     settings,
     showToast,
   } = useApp();
@@ -47,6 +48,7 @@ export const AddTransactionModal: React.FC = () => {
   // Custom subcategory adder state
   const [isAddingSubcat, setIsAddingSubcat] = useState(false);
   const [customSubcatInput, setCustomSubcatInput] = useState('');
+  const [customSubcatIcon, setCustomSubcatIcon] = useState('Tag');
 
   // Sync when opening modal or editing
   useEffect(() => {
@@ -75,7 +77,8 @@ export const AddTransactionModal: React.FC = () => {
       setIsRecurring(false);
       setRecurringFreq('monthly');
     }
-  }, [isAddTxOpen, addTxInitialType, editingTransaction, categories]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAddTxOpen, addTxInitialType, editingTransaction]);
 
   if (!isAddTxOpen) return null;
 
@@ -153,10 +156,10 @@ export const AddTransactionModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[92vh] flex flex-col border border-slate-200 dark:border-slate-800 animate-in slide-in-from-bottom-8 duration-200">
+    <div className="fixed inset-0 z-[80] bg-white dark:bg-slate-900 animate-in fade-in duration-150">
+      <div className="w-full h-full max-w-2xl mx-auto bg-white dark:bg-slate-900 flex flex-col" style={{ height: '100dvh' }}>
         {/* Top Header */}
-        <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center justify-between px-5 pb-3 border-b border-slate-100 dark:border-slate-800" style={{ paddingTop: 'max(1.1rem, env(safe-area-inset-top))' }}>
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
               {editingTransaction ? 'Edit Transaction' : type === 'expense' ? 'Add Expense' : 'Add Income'}
@@ -171,7 +174,7 @@ export const AddTransactionModal: React.FC = () => {
         </div>
 
         {/* Form Body - scrollable */}
-        <form onSubmit={handleSave} className="flex-1 overflow-y-auto px-6 py-4 space-y-4 no-scrollbar">
+        <form onSubmit={handleSave} className="flex-1 overflow-y-auto px-5 py-4 space-y-4 no-scrollbar" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
           {/* Expense / Income Segmented Switch */}
           <div className="grid grid-cols-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl select-none">
             <button
@@ -278,66 +281,96 @@ export const AddTransactionModal: React.FC = () => {
               <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1.5">
                 Subcategory (Optional)
               </label>
-              <div className="flex flex-wrap gap-1.5">
-                {activeCategoryObj.subcategories.map((sub) => {
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 p-1 border border-slate-100 dark:border-slate-800 rounded-2xl">
+                {(subcategory && !activeCategoryObj.subcategories.includes(subcategory) ? [...activeCategoryObj.subcategories, subcategory] : activeCategoryObj.subcategories).map((sub) => {
                   const isSel = subcategory === sub;
                   return (
                     <button
                       key={sub}
                       type="button"
                       onClick={() => setSubcategory(isSel ? '' : sub)}
-                      className={`text-xs px-2.5 py-1 rounded-full font-medium transition ${
+                      className={`flex flex-col items-center justify-start p-2 rounded-xl transition text-center ${
                         isSel
-                          ? 'bg-emerald-600 text-white font-semibold'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                          ? 'bg-emerald-500/10 dark:bg-emerald-500/20 border-2 border-emerald-500 text-slate-900 dark:text-white'
+                          : 'bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300'
                       }`}
                     >
-                      {sub}
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-white mb-1 shadow-xs"
+                        style={{ backgroundColor: activeCategoryObj.color }}
+                      >
+                        <CategoryIcon name={getSubcategoryIconName(sub, activeCategoryObj.icon)} className="w-4 h-4" />
+                      </div>
+                      <span className="text-[10px] font-semibold w-full leading-tight">{sub}</span>
                     </button>
                   );
                 })}
 
-                {/* Add Custom subcat button */}
-                {!isAddingSubcat ? (
+                {!isAddingSubcat && (
                   <button
                     type="button"
                     onClick={() => setIsAddingSubcat(true)}
-                    className="text-xs px-2.5 py-1 rounded-full border border-dashed border-slate-300 dark:border-slate-600 text-slate-500 hover:text-emerald-500 flex items-center gap-1"
+                    className="flex flex-col items-center justify-start p-2 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 text-slate-500"
                   >
-                    <Plus className="w-3 h-3" /> Custom
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-200 dark:bg-slate-700 mb-1">
+                      <Plus className="w-4 h-4" />
+                    </div>
+                    <span className="text-[10px] font-semibold">Custom</span>
                   </button>
-                ) : (
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="text"
-                      placeholder="New subcategory"
-                      value={customSubcatInput}
-                      onChange={(e) => setCustomSubcatInput(e.target.value)}
-                      className="text-xs px-2 py-0.5 rounded-lg border border-emerald-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none w-28"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (customSubcatInput.trim()) {
-                          setSubcategory(customSubcatInput.trim());
-                          setIsAddingSubcat(false);
-                          setCustomSubcatInput('');
-                        }
-                      }}
-                      className="p-1 rounded-md bg-emerald-500 text-white"
-                    >
-                      <Check className="w-3 h-3" />
-                    </button>
+                )}
+              </div>
+
+              {isAddingSubcat && (
+                <div className="mt-2 p-3 rounded-2xl border border-emerald-500/60 bg-slate-50 dark:bg-slate-800/60 space-y-2">
+                  <input
+                    type="text"
+                    placeholder="New subcategory name"
+                    value={customSubcatInput}
+                    onChange={(e) => setCustomSubcatInput(e.target.value)}
+                    className="w-full text-sm px-3 py-2 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none border border-slate-200 dark:border-slate-700"
+                  />
+                  <div className="grid grid-cols-7 gap-1.5 max-h-32 overflow-y-auto">
+                    {AVAILABLE_ICONS.map((ic) => (
+                      <button
+                        key={ic}
+                        type="button"
+                        onClick={() => setCustomSubcatIcon(ic)}
+                        className={`aspect-square rounded-lg flex items-center justify-center ${
+                          customSubcatIcon === ic ? 'bg-emerald-500 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300'
+                        }`}
+                      >
+                        <CategoryIcon name={ic} className="w-4 h-4" />
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex justify-end gap-2">
                     <button
                       type="button"
                       onClick={() => setIsAddingSubcat(false)}
-                      className="p-1 rounded-md bg-slate-200 text-slate-600"
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200"
                     >
-                      <X className="w-3 h-3" />
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const name = customSubcatInput.trim();
+                        if (name) {
+                          setCustomSubcategoryIcon(name, customSubcatIcon);
+                          if (!activeCategoryObj.subcategories.includes(name)) updateCategory(activeCategoryObj.id, { subcategories: [...activeCategoryObj.subcategories, name] });
+                          setSubcategory(name);
+                          setIsAddingSubcat(false);
+                          setCustomSubcatInput('');
+                          setCustomSubcatIcon('Tag');
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-white"
+                    >
+                      Add
                     </button>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -402,12 +435,16 @@ export const AddTransactionModal: React.FC = () => {
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
               Note (Optional)
             </label>
-            <input
-              type="text"
+            <textarea
               placeholder="e.g. Dinner with friends, Uber to airport..."
               value={note}
-              onChange={(e) => setNote(e.target.value)}
-              className="w-full text-xs px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-none outline-none focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-400"
+              rows={4}
+              onChange={(e) => {
+                setNote(e.target.value);
+                e.currentTarget.style.height = 'auto';
+                e.currentTarget.style.height = Math.min(e.currentTarget.scrollHeight, 320) + 'px';
+              }}
+              className="w-full min-h-[110px] max-h-80 text-sm px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-none outline-none focus:ring-2 focus:ring-emerald-500 placeholder:text-slate-400 resize-y"
             />
           </div>
 
